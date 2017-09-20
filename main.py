@@ -8,6 +8,7 @@ import tensorflow as tf
 
 parser = argparse.ArgumentParser(description='')
 parser.add_argument('--dataset_name', dest='dataset_name', default='facades', help='name of the dataset')
+parser.add_argument('--imageRootDir', dest='imageRootDir', default=None, help='name of the dataset')
 parser.add_argument('--epoch', dest='epoch', type=int, default=200, help='# of epoch')
 parser.add_argument('--batch_size', dest='batch_size', type=int, default=1, help='# images in batch')
 parser.add_argument('--train_size', dest='train_size', type=int, default=1e8, help='# images used to train')
@@ -36,6 +37,7 @@ parser.add_argument('--L1_lambda', dest='L1_lambda', type=float, default=100.0, 
 
 args = parser.parse_args()
 
+print("args.imageRootDir = {:10}".format(args.imageRootDir))
 def main(_):
     if not os.path.exists(args.checkpoint_dir):
         os.makedirs(args.checkpoint_dir)
@@ -47,7 +49,9 @@ def main(_):
     with tf.Session() as sess:
         model = pix2pix(sess, image_size=args.fine_size, batch_size=args.batch_size,
                         output_size=args.fine_size, dataset_name=args.dataset_name,
-                        checkpoint_dir=args.checkpoint_dir, sample_dir=args.sample_dir)
+                        checkpoint_dir=args.checkpoint_dir, sample_dir=args.sample_dir, 
+                        input_c_dim=args.input_nc, output_c_dim=args.output_nc, 
+                        imageRootDir=args.imageRootDir)
 
         if args.phase == 'train':
             model.train(args)
