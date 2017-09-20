@@ -120,7 +120,8 @@ class pix2pix(Dataset):
         return sample_images
 
     def sample_model(self, sample_dir, epoch, idx):
-        sample_images = self.load_random_samples()
+        # sample_images = self.load_random_samples()
+        sample_images = self.load_random_images(self.batch_size, is_test=True)
         samples, d_loss, g_loss = self.sess.run(
             [self.fake_B_sample, self.d_loss, self.g_loss],
             feed_dict={self.real_data: sample_images}

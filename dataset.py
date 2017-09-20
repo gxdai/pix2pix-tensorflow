@@ -16,6 +16,8 @@ class Dataset(object):
         def getList(inputDir):
             filelist = []
 	    for rootdir, subdir, files in os.walk(inputDir):
+                if "Images" not in rootdir:         # Only pick the Images Folder
+                    continue
 	        for filename in files:
 	            extname = filename.split('.')[-1]
 		    if extname == 'jpg' or extname == 'JPG' \
@@ -43,6 +45,23 @@ class Dataset(object):
             shuffle(self.filelist)      # Shuffle the training list 
 	    self.ptr = (self.ptr + bach_size) % self.total_num
 
+        # Get the batch list file for image 
+        image_batch_list = batch_list
+        # Get the batch list file for labels
+        label_batch_list = [path.replace('Images', 'labelImage').replace('.tif', '.png') \
+	    for path in batch_list]			                                    
+        # Create a zip file for both lists
+        pairpath_batch_list = zip(image_batch_list, label_batch_list)
+        # Load batch image and label
+        batch_data = [self.load_image_label_pair(pairpath, is_test) for pairpath in pairpath_batch_list]
+
+        return np.array(batch_data)
+    def load_random_images(self, batch_size, is_test=True):
+        index = np.random.permutation(self.total_num)[0]       # random pick examples for testing
+        if index + batch_size < self.total_num:
+	    batch_list = self.filelist[index:index+batch_size]
+	else:
+	    batch_list = self.filelist[index:] + self.filelist[:index+batch_size-self.total_num]
         # Get the batch list file for image 
         image_batch_list = batch_list
         # Get the batch list file for labels
