@@ -4,17 +4,17 @@ import time
 from glob import glob
 import tensorflow as tf
 import numpy as np
-from six.moves import xrange
-
+from six.moves import xrange 
 from ops import *
 from utils import *
-
-class pix2pix(object):
+import sys
+from dataset import Dataset
+class pix2pix(Dataset):
     def __init__(self, sess, image_size=256,
                  batch_size=1, sample_size=1, output_size=256,
                  gf_dim=64, df_dim=64, L1_lambda=100,
                  input_c_dim=3, output_c_dim=3, dataset_name='facades',
-                 checkpoint_dir=None, sample_dir=None):
+                 checkpoint_dir=None, sample_dir=None, imageRootDir=None):
         """
 
         Args:
@@ -26,6 +26,7 @@ class pix2pix(object):
             input_c_dim: (optional) Dimension of input image color. For grayscale input, set to 1. [3]
             output_c_dim: (optional) Dimension of output image color. For grayscale input, set to 1. [3]
         """
+        Dataset.__init__(self, imageRootDir=imageRootDir, newH=256, newW=256)
         self.sess = sess
         self.is_grayscale = (input_c_dim == 1)
         self.batch_size = batch_size
@@ -65,7 +66,6 @@ class pix2pix(object):
         self.dataset_name = dataset_name
         self.checkpoint_dir = checkpoint_dir
         self.build_model()
-
     def build_model(self):
         self.real_data = tf.placeholder(tf.float32,
                                         [self.batch_size, self.image_size, self.image_size,
@@ -152,18 +152,25 @@ class pix2pix(object):
         else:
             print(" [!] Load failed...")
 
+
+        batch_idxs = int(self.total_num // self.batch_size)
         for epoch in xrange(args.epoch):
+            """
             data = glob('./datasets/{}/train/*.jpg'.format(self.dataset_name))
             #np.random.shuffle(data)
             batch_idxs = min(len(data), args.train_size) // self.batch_size
-
+            """
+          
             for idx in xrange(0, batch_idxs):
+                """
                 batch_files = data[idx*self.batch_size:(idx+1)*self.batch_size]
                 batch = [load_data(batch_file) for batch_file in batch_files]
                 if (self.is_grayscale):
                     batch_images = np.array(batch).astype(np.float32)[:, :, :, None]
                 else:
                     batch_images = np.array(batch).astype(np.float32)
+                """
+                batch_images = self.next_batch(self.batch_size, is_test=False)  # THIS IS TRAINING
 
                 # Update D network
                 _, summary_str = self.sess.run([d_optim, self.d_sum],
@@ -393,7 +400,7 @@ class pix2pix(object):
         """Test pix2pix"""
         init_op = tf.global_variables_initializer()
         self.sess.run(init_op)
-
+        """
         sample_files = glob('./datasets/{}/val/*.jpg'.format(self.dataset_name))
 
         # sort testing input
@@ -413,6 +420,7 @@ class pix2pix(object):
                          for i in xrange(0, len(sample_images), self.batch_size)]
         sample_images = np.array(sample_images)
         print(sample_images.shape)
+        """
 
         start_time = time.time()
         if self.load(self.checkpoint_dir):
@@ -420,7 +428,9 @@ class pix2pix(object):
         else:
             print(" [!] Load failed...")
 
-        for i, sample_image in enumerate(sample_images):
+        #for i, sample_image in enumerate(sample_images):
+        for i in range(100):
+            sample_image = self.next_batch(self.batch_size, is_test=True)  # THIS IS TRAINING
             idx = i+1
             print("sampling image ", idx)
             samples = self.sess.run(
