@@ -129,6 +129,23 @@ class pix2pix(Dataset):
         save_images(samples, [self.batch_size, 1],
                     './{}/train_{:02d}_{:04d}.png'.format(sample_dir, epoch, idx))
         print("[Sample] d_loss: {:.8f}, g_loss: {:.8f}".format(d_loss, g_loss))
+    
+    def sample_triplet(self, sample_dir, epoch, idx):
+        # sample_images = self.load_random_samples()
+        sample_images = self.load_random_images(self.batch_size, is_test=True)
+        samples, d_loss, g_loss = self.sess.run(
+            [self.fake_B_sample, self.d_loss, self.g_loss],
+            feed_dict={self.real_data: sample_images}
+        )
+        sample_input, sample_output = sample_images[:,:,:,:1], sample_images[:,:,:,1:]  # Separate the input image and output label
+
+        # Concatenate input images, labels and predicted images
+        samples = np.concatenate((sample_input, sample_output, samples), axis=2)
+        print(samples.shape)
+        save_images(samples, [self.batch_size, 1],
+                    './{}/train_{:02d}_{:04d}.png'.format(sample_dir, epoch, idx))
+        print("[Sample] d_loss: {:.8f}, g_loss: {:.8f}".format(d_loss, g_loss))
+
 
     def train(self, args):
         """Train pix2pix"""
@@ -155,6 +172,8 @@ class pix2pix(Dataset):
 
 
         batch_idxs = int(self.total_num // self.batch_size)
+        # For debug
+        # print('{:10} = {:4d}'.format('args.epoch', args.epoch))
         for epoch in xrange(args.epoch):
             """
             data = glob('./datasets/{}/train/*.jpg'.format(self.dataset_name))
@@ -199,6 +218,7 @@ class pix2pix(Dataset):
 
                 if np.mod(counter, 100) == 1:
                     self.sample_model(args.sample_dir, epoch, idx)
+                    #self.sample_triplet(args.sample_dir, epoch, idx)
 
                 if np.mod(counter, 500) == 2:
                     self.save(args.checkpoint_dir, counter)
@@ -438,5 +458,6 @@ class pix2pix(Dataset):
                 self.fake_B_sample,
                 feed_dict={self.real_data: sample_image}
             )
+            samples = np.concatenate((sample_image[:,:,:,:1],sample_image[:,:,:,1:], samples), axis=2)    # concatenate input image, output image, predicted images at the axis of width 
             save_images(samples, [self.batch_size, 1],
                         './{}/test_{:04d}.png'.format(args.test_dir, idx))

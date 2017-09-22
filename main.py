@@ -1,9 +1,11 @@
 import argparse
-import os
-import scipy.misc
+import os 
+import scipy.misc 
 import numpy as np
+import os
 
-from model import pix2pix
+# from model import pix2pix
+from model_multiple_gpu import pix2pix
 import tensorflow as tf
 
 parser = argparse.ArgumentParser(description='')
@@ -34,10 +36,11 @@ parser.add_argument('--checkpoint_dir', dest='checkpoint_dir', default='./checkp
 parser.add_argument('--sample_dir', dest='sample_dir', default='./sample', help='sample are saved here')
 parser.add_argument('--test_dir', dest='test_dir', default='./test', help='test sample are saved here')
 parser.add_argument('--L1_lambda', dest='L1_lambda', type=float, default=100.0, help='weight on L1 term in objective')
-
+parser.add_argument('--num_gpus', dest='num_gpus', type=int, default=3, help='# of gpus')
 args = parser.parse_args()
 
 print("args.imageRootDir = {:10}".format(args.imageRootDir))
+print("{:10} = {:4d}".format('args.num_gpus', args.num_gpus))
 def main(_):
     if not os.path.exists(args.checkpoint_dir):
         os.makedirs(args.checkpoint_dir)
@@ -45,16 +48,17 @@ def main(_):
         os.makedirs(args.sample_dir)
     if not os.path.exists(args.test_dir):
         os.makedirs(args.test_dir)
-
-    with tf.Session() as sess:
+    with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)) as sess:
         model = pix2pix(sess, image_size=args.fine_size, batch_size=args.batch_size,
                         output_size=args.fine_size, dataset_name=args.dataset_name,
                         checkpoint_dir=args.checkpoint_dir, sample_dir=args.sample_dir, 
-                        input_c_dim=args.input_nc, output_c_dim=args.output_nc, 
-                        imageRootDir=args.imageRootDir)
+                        input_c_dim=args.input_nc, output_c_dim=args.output_nc,
+                        num_gpus=args.num_gpus)
+                        #imageRootDir=args.imageRootDir)
 
         if args.phase == 'train':
-            model.train(args)
+            # model.train(args)
+            model.train_multiple_gpu(args)
         else:
             model.test(args)
 

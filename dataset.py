@@ -43,7 +43,7 @@ class Dataset(object):
 	else:
 	    batch_list = self.filelist[self.ptr:] + self.filelist[:self.ptr+batch_size-self.total_num]
             shuffle(self.filelist)      # Shuffle the training list 
-	    self.ptr = (self.ptr + bach_size) % self.total_num
+	    self.ptr = (self.ptr + batch_size) % self.total_num
 
         # Get the batch list file for image 
         image_batch_list = batch_list
